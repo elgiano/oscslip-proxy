@@ -30,5 +30,5 @@ if __name__ == '__main__':
     osc_server = OSCServerThread(
         args.osc_port, server.out_message_queue, args.verbose)
     osc_server.start()
-    server.serve()
+    server.serve_autoreconnect()
     osc_server.stop()

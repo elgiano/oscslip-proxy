@@ -47,6 +47,14 @@ class SerialOSCProxy():
         ser.write(b'|')
         sleep(1)
 
+    def serve_autoreconnect(self):
+        try:
+            self.serve()
+        except serial.serialutil.SerialException:
+            print('[Serial] Disconnected: retrying in 5s...')
+            sleep(5)
+            self.serve_autoreconnect()
+
     def serve(self):
         print(
             f'[Serial] opening port {self.port} (baud: {self.baudrate}, timeout: {self.timeout})')
