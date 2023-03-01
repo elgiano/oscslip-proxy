@@ -1,5 +1,5 @@
 import serial
-from oscslip_proxy.slipDecoder import SlipDecoder
+from oscslip_proxy.slipDecoder import SlipDecoder, ProtocolError
 from time import sleep
 from pythonosc.udp_client import UDPClient
 from pythonosc.osc_bundle import OscBundle
@@ -27,8 +27,14 @@ class SerialOSCProxy():
                 break
 
     def forward_incoming_messages(self, ser):
-        res = self.slipDecoder.decodeFromSLIP(
-            ser.read(16))  # 16 bytes
+        res = None
+        try:
+            res = self.slipDecoder.decodeFromSLIP(
+                    ser.read(16))  # 16 bytes
+        except ProtocolError:
+            print('PROTOCOL ERROR')
+            self.slipDecoder.resetForNewBuffer()
+            return
         if res:
             msg = self.get_osc_message(bytes(res))
             if msg is not None:
@@ -43,16 +49,15 @@ class SerialOSCProxy():
             pass
         ser.timeout = self.timeout
         # now give the handshake!
-        sleep(1)
-        ser.write(b'|')
-        sleep(1)
+        packet = self.slipDecoder.encodeToSLIP(b'|')
+        ser.write(packet)
 
     def serve_autoreconnect(self):
         try:
             self.serve()
         except serial.serialutil.SerialException:
-            print('[Serial] Disconnected: retrying in 5s...')
-            sleep(5)
+            print('[Serial] Disconnected: retrying in 3s...')
+            sleep(3)
             self.serve_autoreconnect()
 
     def serve(self):
