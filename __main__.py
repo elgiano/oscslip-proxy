@@ -13,7 +13,7 @@ def get_arguments():
                         help="serial port")
     parser.add_argument('-b', '--baudrate', type=int, default=9600,
                         help="baudrate")
-    parser.add_argument('-t', '--timeout', type=int, default=0,
+    parser.add_argument('-t', '--timeout', type=int, default=None,
                         help="timeout")
     parser.add_argument('-v', '--verbose', action='store_true',
                         help="print messages")
