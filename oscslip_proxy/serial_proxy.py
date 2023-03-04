@@ -57,7 +57,6 @@ class SerialOSCProxy():
                 for msg in self.slipDecoder:
                     msg = self.get_osc_message(msg)
                     if (msg is not None):
-                        print(msg.params)
                         if (self.verbose):
                             print('<', end='')
                             print_osc(msg)
