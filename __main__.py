@@ -11,13 +11,13 @@ def get_arguments():
                         help="osc port listening for outbound messages")
     parser.add_argument('-s', '--serial_port', type=str, default='/dev/ttyACM0',
                         help="serial port")
-    parser.add_argument('-b', '--baudrate', type=int, default=9600,
+    parser.add_argument('-b', '--baudrate', type=int, default=115200,
                         help="baudrate")
     parser.add_argument('-t', '--timeout', type=int, default=None,
                         help="timeout")
     parser.add_argument('-v', '--verbose', action='store_true',
                         help="print messages")
-    parser.add_argument('receiver_ports', type=int, nargs='+', default=[57120],
+    parser.add_argument('receiver_ports', type=int, nargs='*', default=[57120],
                         help="osc receivers (57120)")
     return parser.parse_args()
 
