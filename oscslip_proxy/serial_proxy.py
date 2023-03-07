@@ -1,10 +1,8 @@
 import serial
 from sliplib import SlipStream
-from time import sleep
 from pythonosc.udp_client import UDPClient
 from pythonosc.osc_bundle import OscBundle
 from pythonosc.osc_message import OscMessage
-from queue import Queue, Empty
 
 
 def print_osc(msg):
@@ -19,52 +17,41 @@ def print_osc(msg):
 
 
 class SerialOSCProxy():
-    def __init__(self, portT, bd=115200, to=None, osc_receivers=[], verbose=True):
+    def __init__(self, port, bd=115200, to=None, osc_receivers=[], verbose=True):
         print("[OSC] forwarding to:")
         for recv in osc_receivers:
             print(recv)
-        self.port, self.baudrate, self.timeout = portT, bd, to
-        self.stopEvent = False
-        self.osc_clients = [UDPClient(
-            addr, port) for (addr, port) in osc_receivers]
-        self.out_message_queue = Queue()
+        self.port, self.baudrate, self.timeout = port, bd, to
+        self.osc_clients = [
+            UDPClient(addr, port) for (addr, port) in osc_receivers
+        ]
+        self.serial = None
+        self.slipCodec = None
         self.verbose = verbose
 
-    def forward_outbound_messages(self, ser):
-        while not self.out_message_queue.empty():
-            try:
-                data = self.out_message_queue.get_nowait()
-                self.slipDecoder.send_msg(data)
-            except Empty:
-                break
-
-    def serve_autoreconnect(self):
-        try:
-            self.serve()
-        except serial.serialutil.SerialException:
-            print('[Serial] Disconnected: retrying in 3s...')
-            sleep(3)
-            self.serve_autoreconnect()
-
-    def serve(self):
+    def open_serial(self):
         print(
             f'[Serial] opening port {self.port} (baud: {self.baudrate}, timeout: {self.timeout})')
-        with serial.Serial(port=self.port, baudrate=self.baudrate, timeout=self.timeout) as ser:
-            self.slipDecoder = SlipStream(ser, 1)
-            print('Started... ctrl-C to exit')
-            try:
-                # read
-                for msg in self.slipDecoder:
-                    msg = self.get_osc_message(msg)
-                    if (msg is not None):
-                        if (self.verbose):
-                            print('<', end='')
-                            print_osc(msg)
-                        for c in self.osc_clients:
-                            c.send(msg)
-                    self.forward_outbound_messages(ser)
-            except KeyboardInterrupt:
-                print('\nexiting...')
+        self.serial = serial.Serial(port=self.port, baudrate=self.baudrate, timeout=self.timeout)
+        self.slipCodec = SlipStream(self.serial, 1)
+
+    def close_serial(self):
+        if self.serial is not None:
+            self.serial.close()
+
+    def serve(self):
+        if self.serial is None:
+            print("[Serial] no serial connection.")
+            return
+        print('Started... ctrl-C to exit')
+        for msg in self.slipCodec:
+            msg = self.get_osc_message(msg)
+            if (msg is not None):
+                if (self.verbose):
+                    print('<', end='')
+                    print_osc(msg)
+                for c in self.osc_clients:
+                    c.send(msg)
 
     def get_osc_message(self, dgram):
         if OscBundle.dgram_is_bundle(dgram):

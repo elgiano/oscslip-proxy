@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
+from serial.serialutil import SerialException
 from oscslip_proxy.serial_proxy import SerialOSCProxy
 from oscslip_proxy.osc_server import OSCServerThread
+from time import sleep
 import argparse
 
 
@@ -25,10 +27,25 @@ def get_arguments():
 if __name__ == '__main__':
     args = get_arguments()
     recv = [('127.0.0.1', p) for p in args.receiver_ports]
-    server = SerialOSCProxy(args.serial_port, args.baudrate,
+    serial = SerialOSCProxy(args.serial_port, args.baudrate,
                             args.timeout, recv, args.verbose)
     osc_server = OSCServerThread(
-        args.osc_port, server.out_message_queue, args.verbose)
+        args.osc_port, serial.slipCodec, args.verbose)
     osc_server.start()
-    server.serve_autoreconnect()
+    while True:
+        try:
+            serial.open_serial()
+            osc_server.set_slipStream(serial.slipCodec)
+            serial.serve()
+        except SerialException:
+            print('[Serial] Disconnected: retrying in 3s...')
+            try:
+                sleep(3)
+            except KeyboardInterrupt:
+                break
+        except KeyboardInterrupt:
+            break
+
+    print('\nexiting...')
     osc_server.stop()
+    serial.close_serial()
