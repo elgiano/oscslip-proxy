@@ -18,9 +18,6 @@ def print_osc(msg):
 
 class SerialOSCProxy():
     def __init__(self, port, bd=115200, to=None, osc_receivers=[], verbose=True):
-        print("[OSC] forwarding to:")
-        for recv in osc_receivers:
-            print(recv)
         self.port, self.baudrate, self.timeout = port, bd, to
         self.osc_clients = [
             UDPClient(addr, port) for (addr, port) in osc_receivers
@@ -39,7 +36,7 @@ class SerialOSCProxy():
         if self.serial is not None:
             self.serial.close()
 
-    def serve(self):
+    def receive(self):
         if self.serial is None:
             print("[Serial] no serial connection.")
             return
@@ -48,10 +45,16 @@ class SerialOSCProxy():
             msg = self.get_osc_message(msg)
             if (msg is not None):
                 if (self.verbose):
-                    print('<', end='')
+                    print('<', end=' ')
                     print_osc(msg)
                 for c in self.osc_clients:
                     c.send(msg)
+
+    def send_msg(self, data):
+        if self.serial is None:
+            print("[Serial] no serial connection.")
+            return
+        self.slipCodec.send_msg(data)
 
     def get_osc_message(self, dgram):
         if OscBundle.dgram_is_bundle(dgram):
@@ -59,7 +62,7 @@ class SerialOSCProxy():
         elif OscMessage.dgram_is_message(dgram):
             msg = OscMessage(dgram)
         else:
-            print(f'WARNING: unrecognized dgram {dgram}')
+            print(f'[Serial] WARNING: unrecognized dgram {dgram}')
             return None
         return msg
 

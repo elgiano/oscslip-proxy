@@ -27,17 +27,19 @@ def get_arguments():
 if __name__ == '__main__':
     args = get_arguments()
     recv = [('127.0.0.1', p) for p in args.receiver_ports]
+    print("[OSC] forwarding serial-osc to:")
+    for r in recv:
+        print(r)
     serial = SerialOSCProxy(args.serial_port, args.baudrate,
                             args.timeout, recv, args.verbose)
-    osc_server = OSCServerThread(
-        args.osc_port, serial.slipCodec, args.verbose)
+    osc_server = OSCServerThread(args.osc_port, serial, args.verbose)
     osc_server.start()
     while True:
         try:
             serial.open_serial()
-            osc_server.set_slipStream(serial.slipCodec)
-            serial.serve()
+            serial.receive()
         except SerialException:
+            serial.close_serial()
             print('[Serial] Disconnected: retrying in 3s...')
             try:
                 sleep(3)
