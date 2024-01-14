@@ -1,8 +1,6 @@
-#!/usr/bin/python3
-
+from .serial_proxy import SerialOSCProxy
+from .osc_server import OSCServerThread
 from serial.serialutil import SerialException
-from oscslip_proxy.serial_proxy import SerialOSCProxy
-from oscslip_proxy.osc_server import OSCServerThread
 from time import sleep
 import argparse
 
@@ -24,7 +22,7 @@ def get_arguments():
     return parser.parse_args()
 
 
-if __name__ == '__main__':
+def main():
     args = get_arguments()
     recv = [('127.0.0.1', p) for p in args.receiver_ports]
     print("[OSC] forwarding serial-osc to:")
@@ -51,3 +49,7 @@ if __name__ == '__main__':
     print('\nexiting...')
     osc_server.stop()
     serial.close_serial()
+
+
+if __name__ == "__main__":
+    main()

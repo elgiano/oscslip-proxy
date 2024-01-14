@@ -1,0 +1,26 @@
+[project]
+name = "oscslip-proxy"
+version = "0.0.1"
+authors = [
+  { name="Gianluca Elia", email="elgiano@gmail.com" },
+]
+description = "An OSC server that proxies between local network and SLIP-encoded OSC over serial"
+readme = "README.md"
+license = "Unlicense"
+requires-python = ">=3.8"
+dependencies = [
+    "pyserial",
+    "python-osc",
+    "sliplib",
+]
+
+[project.scripts]
+oscslip-proxy = "oscslip_proxy:main"
+
+[project.urls]
+Homepage = "https://github.com/elgiano/oscslip-proxy"
+Issues = "https://github.com/elgiano/oscslip-proxy/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
